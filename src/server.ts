@@ -28,37 +28,42 @@ var validUrl = require("valid-url");
   //    image_url: URL of a publicly accessible image
   // RETURNS
   //   the filtered image file [!!TIP res.sendFile(filteredpath); might be useful]
-  app.get("/filteredimage/", async (req: Express.Request, res:Express.Response) => {
+  app.get(
+    "/filteredimage/",
+    async (req: Express.Request, res: Express.Response) => {
+      const fs = require("fs");
 
-    const fs = require('fs')
+      const dir = "./src/util/tmp/";
+    
+      try {
+        const files = fs.readdirSync(dir);
+        for (const file of files) {
+          console.log(file);
 
-    const dir = './src/util/tmp/'
-    const files = fs.readdirSync(dir)
+          deleteLocalFiles([String(dir + file)]);
+        }
+      } catch (error) {
+        console.error();
+      }
 
-    for (const file of files) {
-      console.log(file);
-      deleteLocalFiles([String(dir + file)])
+      const url = req.query.image_url;
+      console.log("start getting image");
+      if (validUrl.isUri(url)) {
+        console.log("URL is valid");
+        await filterImageFromURL(url)
+          .then(function (image_path) {
+            console.log(image_path);
+            res.sendFile(String(image_path));
+          })
+          .catch((error) => {
+            console.log(error);
+            res.send("404, URL image not found");
+          });
+      } else {
+        console.log("Not a valid URL");
+      }
     }
-
-    const url = req.query.image_url;
-    console.log("start getting image");
-    if (validUrl.isUri(url)) {
-      console.log("URL is valid");
-      await filterImageFromURL(url)
-        .then(function (image_path) {
-          console.log(image_path);
-          res.sendFile(String(image_path));
-        })
-        .catch((error) => {
-          console.log(error);
-          res.send("404, URL image not found");
-        });
-    } else {
-      console.log("Not a valid URL");
-    }
-
-
-  });
+  );
 
   /**************************************************************************** */
 
